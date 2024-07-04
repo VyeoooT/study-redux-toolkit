@@ -1,8 +1,12 @@
-import { addPost, cancelEditingPost, finishEditingPost } from "../../blog.slice"
+import { addPost, cancelEditingPost, updatePost } from "../../blog.slice"
 import React, { useEffect, useState } from "react"
-import { useDispatch, useSelector } from "react-redux"
-import { RootState } from "store"
+import { useSelector } from "react-redux"
+import { RootState, useAppDispatch } from "../../../../store"
 import { PostType } from "types/blog.type"
+
+interface ErrorForm {
+    publishDate: string
+}
 
 const initialState: PostType = {
     id: '',
@@ -14,31 +18,53 @@ const initialState: PostType = {
 }
 
 export default function CreatePost() {
+    const [errorForm, setErrorForm] = useState<null | ErrorForm>(null)
+
     // dispatch action -> store redux
-    const dispatch = useDispatch()
+    const dispatch = useAppDispatch()
+
+    // loading
+    // const loading = useSelector((state: RootState) => state.blog.loading)
     
     // create post
     const [formData, setFormData] = useState<PostType>(initialState)
 
-    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async(e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
 
         // check mode edit or publish
         if (editingPost) {
-            dispatch(finishEditingPost(formData))
+            dispatch(updatePost({
+                postId: editingPost.id,
+                body: formData
+            }))
+            .unwrap().then(() => {
+                // cleanup
+                setFormData(initialState)
+                
+                if (errorForm) {
+                    setErrorForm(null)
+                }
+            })
+            .catch((error) => {
+                setErrorForm(error.error)
+            })
         }
         else {
-            // generate id
-            // const formDataWithId = {...formData, id: new Date().toISOString()}
+            try {
+                // nho `.unwrap()` | `unwrapResult()` nho co loi no moi nhay vao `catch`
+                // const res = await dispatch(addPost(formData))
+                await dispatch(addPost(formData)).unwrap()
+                // console.log(res)
+                if (errorForm) {
+                    setErrorForm(null)
+                }
+                setFormData(initialState)
 
-            const formDataWithId = {...formData}
-    
-            // dispatch action
-            dispatch(addPost(formDataWithId))
+            } catch (error: any) {
+                setErrorForm(error.error)
+            }
         }
-
-        // clear form
-        setFormData(initialState)
     }
 
     // get du lieu de editpost
@@ -51,6 +77,7 @@ export default function CreatePost() {
     // khi cancel edit
     const handleCancelEditingPost = () => {
         dispatch(cancelEditingPost())
+        setErrorForm(null)
     }
 
     return (
@@ -103,16 +130,22 @@ export default function CreatePost() {
             </div>
 
             <div className="mb-6">
-                <label htmlFor="publishDate" className="mb-2 block text-sm font-medium text-gray-900 dark:text-gray-300">Publish Date</label>
+                <label htmlFor="publishDate" className={`mb-2 block text-sm font-medium text-gray-900 dark:text-gray-300 ${errorForm?.publishDate ? 'text-red-700' : 'text-gray-900'}`}>Publish Date</label>
                 <input
                     type="datetime-local"
                     id="publishDate"
-                    className="block w-56 rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-blue-500"
+                    className={`block w-56 rounded-lg border p-2.5 text-sm focus:outline-none ${errorForm?.publishDate ? 'border-red-500 bg-red-50 text-red-900 placeholder-red-700 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 bg-gray-50 text-gray-900 focus:border-blue-500 focus:ring-blue-500'}`}
                     placeholder="Title"
                     required
                     value={formData.publishDate}
                     onChange={e => setFormData((prev) => ({ ...prev, publishDate: e.target.value }))}
                 />
+                {errorForm?.publishDate && (
+                    <p className="mt-2 text-sm text-red-600">
+                        <span className="font-medium">Lỗi ! </span>
+                        {errorForm.publishDate}
+                    </p>
+                )}
             </div>
 
             <div className="mb-6 flex items-center">

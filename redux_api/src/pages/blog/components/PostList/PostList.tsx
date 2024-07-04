@@ -1,19 +1,38 @@
-import { useDispatch, useSelector } from "react-redux";
-import PostItem from "../PostItem";
-import { RootState } from "store";
-import { deletePost, startEditingPost } from "../../blog.slice";
+import { useSelector } from "react-redux"
+import PostItem from "../PostItem"
+import { RootState, useAppDispatch } from "../../../../store"
+import { deletePost, getPostList, startEditingPost } from "../../blog.slice"
+import { useEffect } from "react"
+import SkeletonLoadingPost from "../Skeleton"
+
+// goi API trong useEffect()
+// neu goi thanh cong thi dispatch action type: "blog/getPostListSuccess"
+// neu goi that bai thi dispatch action type: "blog/getPostListFailed"
+// -> xu ly bat dong bo trong component, khong xu ly bat dong bo trong ```creataSlice > reducers```
 
 export default function PostList() {
+    const dispatch = useAppDispatch()
+
     // lay ra du lieu
     const postList = useSelector((state: RootState) => state.blog.postList)
-    
-    const dispatch = useDispatch()
+
+    // loading
+    const loading = useSelector((state: RootState) => state.blog.loading)
+
+    useEffect(() => {
+        const promise = dispatch(getPostList())
+
+        // reject get data 1 lan
+        return () => {
+            promise.abort()
+        }
+    }, [dispatch])
+
 
     // xoa 1 item, truyen callback lay id cua postItem
     const handleDelete = (postId: string) => {
         // truyen id cua post vao de dispatch len store
-        let id = dispatch(deletePost(postId))
-        console.log(id)
+        dispatch(deletePost(postId))
     }
 
     // edit 1 item, lay toan bo du lieu cua post qua id
@@ -31,9 +50,21 @@ export default function PostList() {
                     </p>
                 </div>
                 <div className='grid gap-4 sm:grid-cols-2 md:gap-6 lg:grid-cols-2 xl:grid-cols-2 xl:gap-8'>
-                    {postList.map((item) => (
-                        <PostItem key={item.id} post={item} handleDelete={handleDelete} handleStartEditing={handleStartEditing}/>
-                    ))}
+                    {/* call loading */}
+                    {loading && (
+                        <>
+                            <SkeletonLoadingPost />
+                            <SkeletonLoadingPost />
+                            <SkeletonLoadingPost />
+                            <SkeletonLoadingPost />
+                        </>
+                    )}
+
+                    {!loading &&
+                        postList.map((item) => (
+                            <PostItem key={item.id} post={item} handleDelete={handleDelete} handleStartEditing={handleStartEditing}/>
+                        ))
+                    }
                 </div>
             </div>
         </div>

@@ -17,3 +17,8 @@
     * json-server local
     * Xu ly action trong ```extraReducers```
     * Xu ly ```skeleton loading```
+
+4. Folder **redux_rtk_query**: createApi()
+    * Xu ly goi API 2 lan
+    * Xu ly loi tra ve tu server
+    * Catching, Polling, refetch, custom header

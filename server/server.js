@@ -23,11 +23,13 @@ server.use((req, res, next) => {
                 }
             })
         }
-        // if (req.body.title === 'admin') {
-        //     return res.status(400).send({
-        //         error: 'Server bị lỗi'
-        //     })
-        // }
+
+        // gia su loi
+        if (req.body.title === 'admin') {
+            return res.status(500).send({
+                error: 'Server bị lỗi'
+            })
+        }
     }
     setTimeout(() => {
         next()
